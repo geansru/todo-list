@@ -21,14 +21,22 @@ class SmokeTest(TestCase):
         request.method = 'POST'
         list_item = 'A new list item'
         request.POST['item_text'] = list_item
+
         response = home_page(request)
-        content = response.content.decode()
-        self.assertIn(list_item, content)
-        expected_html = render_to_string(
-            'home.html',
-            {'new_item_text': 'A new list item'}
-        )
-        self.assertEqual(content, expected_html)
+
+        self.assertEqual(Item.objects.count(), 1)
+        new_item = Item.objects.first()
+        self.assertEqual(new_item.text, list_item)
+
+    def test_home_page_redirects_after_POST(self):
+        request = HttpRequest()
+        request.method = 'POST'
+        request.POST['item_text'] = 'A new list item'
+
+        response = home_page(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['location'], '/')
 
 class ItemModelsTest(TestCase):
 
@@ -50,3 +58,40 @@ class ItemModelsTest(TestCase):
         second_saved_item = saved_items[1]
         self.assertEqual(first_saved_item.text, first_item_text)
         self.assertEqual(second_saved_item.text, second_item_text)
+
+    def test_home_page_only_saves_item_when_necessary(self):
+        request = HttpRequest()
+        home_page(request)
+        self.assertEqual(Item.objects.count(), 0)
+
+    def test_home_page_can_save_a_POST_request(self):
+        item_text = 'A new list item'
+        request = HttpRequest()
+        request.method = 'POST'
+        request.POST['item_text'] = item_text
+
+        response = home_page(request)
+
+        self.assertEqual(Item.objects.count(), 1)
+        new_item = Item.objects.first()
+        self.assertEqual(new_item.text, item_text)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['location'], '/')
+
+class HomePageTest(TestCase):
+
+    def test_home_page_displays_all_list_items(self):
+        item_text = 'itemey %d'
+        count = 2
+        for x in range(count):
+            text = item_text % x
+            Item.objects.create(text=text)
+        # Item.objects.create(text='itemey 2')
+
+        request = HttpRequest()
+        response = home_page(request)
+        content = response.content.decode()
+
+        self.assertIn('itemey 1', content)
+        # self.assertIn('itemey 2', content)
