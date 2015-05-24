@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 from selenium.webdriver.common.keys import Keys
+from django.test import LiveServerTestCase
 import time
+from lists.models import Item
 
 __author__ = 'noskill'
 from selenium import webdriver
 import unittest
 
-class NewVisitorTest(unittest.TestCase):
+class NewVisitorTest(LiveServerTestCase):
     def setUp(self):
         self.browser = webdriver.Firefox()
         self.browser.implicitly_wait(3)
@@ -24,7 +26,7 @@ class NewVisitorTest(unittest.TestCase):
     def test_can_start_a_list_and_retrieve_it_later(self):
         # Edith has heard about a cool new online to-do app. She goes to check
         # out its homepage
-        self.browser.get('http://localhost:8000')
+        self.browser.get(self.live_server_url)
 
         # She notices the page title and header mention to-do lists
         self.assertIn(self.title, self.browser.title)
@@ -55,10 +57,14 @@ class NewVisitorTest(unittest.TestCase):
         # There is still a text box inviting her to add another item. She enters
         # "Use peacock feathers to make a fly" (Edith is very methodical)
         input_box = self.browser.find_element_by_id('id_new_item')
-        input_box.send_keys('Use peacock feather to make a fly')
+        input_box.send_keys('Use peacock feathers to make a fly')
         input_box.send_keys(Keys.ENTER)
 
         # The page updates again, and shows both items on her list
+
+        # ???????????????????????????
+        # Item.objects.all().delete()
+
         for i in range(0, len(asserts)):
             number = i + 1
             assert_string = asserts[i] % number
