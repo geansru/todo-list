@@ -5,5 +5,5 @@ from django.shortcuts import render
 def home_page(request):
     html_start = '<html>'
     html_end = '</html>'
-    title = '<title>To-Do lists</title>'
+    title = '<title>To-Do list</title>'
     return HttpResponse(html_start + title + html_end)
