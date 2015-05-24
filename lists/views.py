@@ -3,8 +3,7 @@ from django.shortcuts import render
 
 # Create your views here.
 def home_page(request):
-    # html_start = '<html>'
-    # html_end = '</html>'
-    # title = '<title>To-Do list</title>'
-    # return HttpResponse(html_start + title + html_end)
-    return render(request, 'home.html')
+    # if request.method == 'POST': return HttpResponse(request.POST['item_text'])
+    return render(request, 'home.html', {
+        'new_item_text': request.POST.get('item_text', '')
+    })

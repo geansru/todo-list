@@ -15,3 +15,17 @@ class SmokeTest(TestCase):
         response = home_page(request)
         expected_html = render_to_string('home.html')
         self.assertEqual(response.content.decode(), expected_html)
+
+    def test_home_page_can_save_a_POST_request(self):
+        request = HttpRequest()
+        request.method = 'POST'
+        list_item = 'A new list item'
+        request.POST['item_text'] = list_item
+        response = home_page(request)
+        content = response.content.decode()
+        self.assertIn(list_item, content)
+        expected_html = render_to_string(
+            'home.html',
+            {'new_item_text': 'A new list item'}
+        )
+        self.assertEqual(content, expected_html)
