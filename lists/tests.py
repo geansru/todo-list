@@ -6,6 +6,24 @@ from django.http import HttpRequest
 from lists.models import Item
 # Create your tests here.
 
+class NewListTest(TestCase):
+    url_old = '/lists/the-only-list-in-the-world/'
+    url = '/lists/new'
+    item_text = 'A new list_item'
+
+    def test_saving_a_POST_request(self):
+        data={'item_text': self.item_text}
+        self.client.post(self.url, data=data)
+        self.assertEqual(Item.objects.count(), 1)
+
+        new_item = Item.objects.first()
+        self.assertEqual(new_item.text, self.item_text)
+
+    def test_redirects_after_POST(self):
+        data={'item_text': self.item_text}
+        response = self.client.post(self.url, data=data)
+        self.assertRedirects(response, self.url_old)
+
 class ItemModelsTest(TestCase):
 
     def test_first_saving_and_retrieving_items(self):
@@ -32,21 +50,6 @@ class ItemModelsTest(TestCase):
         home_page(request)
         self.assertEqual(Item.objects.count(), 0)
 
-    def test_home_page_can_save_a_POST_request(self):
-        item_text = 'A new list item'
-        request = HttpRequest()
-        request.method = 'POST'
-        request.POST['item_text'] = item_text
-
-        response = home_page(request)
-
-        self.assertEqual(Item.objects.count(), 1)
-        new_item = Item.objects.first()
-        self.assertEqual(new_item.text, item_text)
-
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['location'], '/lists/the-only-list-in-the-world/')
-
 class HomePageTest(TestCase):
     def test_url_resolves_to_home_page_view(self):
         found = resolve('/')
@@ -57,28 +60,6 @@ class HomePageTest(TestCase):
         response = home_page(request)
         expected_html = render_to_string('home.html')
         self.assertEqual(response.content.decode(), expected_html)
-
-    def test_home_page_can_save_a_POST_request(self):
-        request = HttpRequest()
-        request.method = 'POST'
-        list_item = 'A new list item'
-        request.POST['item_text'] = list_item
-
-        response = home_page(request)
-
-        self.assertEqual(Item.objects.count(), 1)
-        new_item = Item.objects.first()
-        self.assertEqual(new_item.text, list_item)
-
-    def test_home_page_redirects_after_POST(self):
-        request = HttpRequest()
-        request.method = 'POST'
-        request.POST['item_text'] = 'A new list item'
-
-        response = home_page(request)
-
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['location'], '/lists/the-only-list-in-the-world/')
 
 class ListViewTest(TestCase):
     url = '/lists/the-only-list-in-the-world/'
