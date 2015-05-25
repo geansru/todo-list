@@ -22,7 +22,9 @@ class NewListTest(TestCase):
     def test_redirects_after_POST(self):
         data={'item_text': self.item_text}
         response = self.client.post(self.url, data=data)
-        self.assertRedirects(response, self.url_old)
+        new_list = List.objects.first()
+        url = '/lists/%d/' % (new_list.id, )
+        self.assertRedirects(response, url)
 
 class ListAndItemModelsTest(TestCase):
 
@@ -73,19 +75,93 @@ class HomePageTest(TestCase):
 
 class ListViewTest(TestCase):
     url = '/lists/the-only-list-in-the-world/'
+    lists_url_tmplt = '/lists/%d/'
+
+    def url_helper(self, list_):
+        return self.lists_url_tmplt % list_.id
+
+    def helper(self):
+        return List.objects.create()
 
     def test_uses_list_temlplate(self):
-        response = self.client.get(self.url)
-        # print(response.content.decode())
+        list_ = self.helper()
+        url = self.url_helper(list_)
+        # print(url)
+        response = self.client.get(url)
         self.assertTemplateUsed(response, 'list.html')
+
+    def test_displays_only_items_for_that_list(self):
+        correct_list = self.helper()
+
+        # lambda helper's
+        count = 2
+        itemey = lambda x : "itemey " + str(x)
+        itemey_other = lambda x : "other list item " + str(x)
+        rng = lambda: range(1, count + 1)
+
+        for x in rng():
+            Item.objects.create(text=itemey(x), list=correct_list)
+
+        other_list = self.helper()
+
+        for x in rng():
+            Item.objects.create(text=itemey_other(x), list=other_list)
+
+        url = self.url_helper(correct_list)
+        response = self.client.get(url)
+
+        for x in rng():
+            self.assertContains(response, itemey(x))
+            self.assertNotContains(response, itemey_other(x))
 
     def test_displays_all_items(self):
         list_ = List.objects.create()
         Item.objects.create(text='itemey 1', list=list_)
         Item.objects.create(text='itemey 2', list=list_)
 
-        response = self.client.get(self.url)
+        response = self.client.get(self.url_helper(list_))
         content = response.content.decode()
 
         self.assertIn('itemey 1', content)
         self.assertIn('itemey 2', content)
+
+    def test_passes_correct_list_to_template(self):
+        other_list = self.helper()
+        correct_list = self.helper()
+
+        url = self.url_helper(correct_list)
+        response = self.client.get(url)
+
+        self.assertEqual(response.context['list'], correct_list)
+
+class NewTestItem(TestCase):
+
+    def helper(self):
+        return List.objects.create()
+
+    def test_can_save_a_POST_request_to_an_existing_list(self):
+        other_list = self.helper()
+        correct_list = self.helper()
+        url_tmplt = '/lists/%d/add_item'
+        add_url = url_tmplt % (correct_list.id, )
+        text = 'A new item for an existing list'
+        data = { 'item_text': text }
+        self.client.post(add_url, data=data)
+
+        self.assertEqual(Item.objects.count(), 1)
+        new_item = Item.objects.first()
+        self.assertEqual(new_item.text, text)
+        self.assertEqual(new_item.list, correct_list)
+
+    def test_redirects_to_list_view(self):
+        other_list = self.helper()
+        correct_list = self.helper()
+        url_list = '/lists/%d/'
+        url_tmplt = url_list + 'add_item'
+        add_url = url_tmplt % (correct_list.id, )
+        text = 'A new item for an existing list'
+        data = { 'item_text': text }
+
+        response = self.client.post(add_url, data=data)
+        show_url = url_list % (correct_list.id, )
+        self.assertRedirects(response, show_url)
