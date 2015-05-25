@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 from selenium.webdriver.common.keys import Keys
 from django.test import LiveServerTestCase
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 import time
-from lists.models import Item
 
 __author__ = 'noskill'
 from selenium import webdriver
 import unittest
 
-class NewVisitorTest(LiveServerTestCase):
+class NewVisitorTest(StaticLiveServerTestCase):
     def setUp(self):
         self.browser = webdriver.Firefox()
         self.browser.implicitly_wait(3)
@@ -22,7 +22,7 @@ class NewVisitorTest(LiveServerTestCase):
         rows = table.find_elements_by_tag_name('tr')
         self.assertIn(row_text, [row.text for row in rows])
 
-    def test_can_start_a_list_and_retrieve_it_later(self):
+    def _test_can_start_a_list_and_retrieve_it_later(self):
         # Edith has heard about a cool new online to-do app. She goes to check
         # out its homepage
         self.browser.get(self.live_server_url)
@@ -106,3 +106,26 @@ class NewVisitorTest(LiveServerTestCase):
         # She visits that URL - her to-do list is still there.
 
         # Satisfied, she goes back to sleep
+
+    def test_layout_and_stylish(self):
+        # Helpers
+        delta = 8
+        x = 512
+        get_input = lambda: self.browser.find_element_by_id('id_new_item')
+        get_location = lambda: input_box.location['x'] + input_box.size['width']/2
+        check_center = lambda: self.assertAlmostEqual(input_box_location, x, delta=delta)
+
+        # Edith goes to the home page
+        self.browser.get(self.live_server_url)
+        self.browser.set_window_size(1024, 768)
+        # She notices the input box is nicely centered
+        input_box = get_input()
+        input_box_location = get_location()
+        check_center()
+
+        # She starts a new list and sees the input is nicely centered there too
+        input_box.send_keys('testing\n')
+        input_box = get_input()
+        input_box_location = get_location()
+        # self.assertAlmostEqual(input_box_location, x, delta=delta)
+        check_center()

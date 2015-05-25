@@ -1,0 +1,1 @@
+python34 manage.py test functional_tests
