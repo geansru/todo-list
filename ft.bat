@@ -1,1 +1,1 @@
-python34 manage.py test functional_tests
+python34 manage.py test functional_tests --liveserver=stage
